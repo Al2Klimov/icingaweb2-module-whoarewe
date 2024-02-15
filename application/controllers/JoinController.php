@@ -8,6 +8,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Icinga\Module\Whoarewe\Form\ConfirmForm;
 use Icinga\Module\Whoarewe\Game;
 use Icinga\Module\Whoarewe\RedisAwareController;
+use Icinga\Security\SecurityException;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Url;
 
@@ -23,6 +24,10 @@ class JoinController extends CompatController
             (new ConfirmForm($this->translate('Join game')))
                 ->on(ConfirmForm::ON_SUCCESS, function () use ($game): void {
                     $this->updateGame($this->getRedis(), $game, function (Game $state) use ($game): void {
+                        if ($state->started) {
+                            throw new SecurityException($this->translate('Game already started: %s'), $game);
+                        }
+
                         $state->players[$this->Auth()->getUser()->getUsername()] = null;
                     });
 
