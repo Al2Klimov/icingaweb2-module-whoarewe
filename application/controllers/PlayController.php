@@ -7,6 +7,7 @@ namespace Icinga\Module\Whoarewe\Controllers;
 use Icinga\Module\Whoarewe\RedisAwareController;
 use Icinga\Security\SecurityException;
 use ipl\Html\Html;
+use ipl\Html\ValidHtml;
 use ipl\Web\Compat\CompatController;
 
 class PlayController extends CompatController
@@ -29,7 +30,17 @@ class PlayController extends CompatController
             throw new SecurityException($this->translate('You haven\'t joined game: %s'), $game);
         }
 
-        // TODO
-        $this->addContent(Html::tag('p'));
+        $this->addContent(Html::tag('h2', $this->translate('Teams')));
+
+        foreach ($state->teams as $team => $players) {
+            $this->addContent(Html::tag('h3', sprintf($this->translate('Team %d'), $team)));
+
+            $this->addContent(Html::tag('ul', [], array_map(
+                function (string $name): ValidHtml {
+                    return Html::tag('li', $name);
+                },
+                array_keys($players)
+            )));
+        }
     }
 }

@@ -5,7 +5,7 @@
 namespace Icinga\Module\Whoarewe\Controllers;
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Icinga\Module\Whoarewe\Form\ConfirmForm;
+use Icinga\Module\Whoarewe\Form\StartForm;
 use Icinga\Module\Whoarewe\Game;
 use Icinga\Module\Whoarewe\RedisAwareController;
 use Icinga\Security\SecurityException;
@@ -39,14 +39,23 @@ class LobbyController extends CompatController
         if (count($state->players) > 1) {
             if (array_key_first($state->players) === $this->Auth()->getUser()->getUsername()) {
                 $this->addContent(
-                    (new ConfirmForm($this->translate('Start game')))
-                        ->on(ConfirmForm::ON_SUCCESS, function () use ($redis, $game): void {
-                            $this->updateGame($redis, $game, function (Game $state) use ($game): void {
+                    (new StartForm())
+                        ->on(StartForm::ON_SUCCESS, function (StartForm $form) use ($redis, $game): void {
+                            $this->updateGame($redis, $game, function (Game $state) use ($form, $game): void {
                                 if ($state->started) {
                                     throw new SecurityException($this->translate('Game already started: %s'), $game);
                                 }
 
                                 $state->started = true;
+                                $teams = min($form->getValue('teams'), count($state->players));
+                                $i = 0;
+
+                                foreach ($state->players as $player => $_) {
+                                    $j = $i % $teams;
+                                    $state->teams[$j][$player] = null;
+                                    $state->players[$player] = $j;
+                                    ++$i;
+                                }
                             });
 
                             $this->redirectNow(Url::fromPath('whoarewe/play')->setParam('game', $game));
