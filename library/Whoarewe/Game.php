@@ -11,4 +11,5 @@ class Game
     public array $players = [];
     public bool $started = false;
     public array $teams = [];
+    public array $identities = [];
 }
